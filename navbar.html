@@ -1,0 +1,155 @@
+<ul id="nav" class="menubar root-level" role="menubar">
+	<li role="link" class="item desktop menu-item" tabindex="0">
+		<a href="home" tabindex="-1"> Home
+		</a>
+	</li>
+	<li role="link" class="menu-item" tabindex="0">
+		<a href="aaa" tabindex="-1"> aaa
+		</a>
+	</li>
+
+	<li role="link" class="menu-parent" tabindex="0" aria-haspopup="true">
+		<span class="invisibleForAria">ccc</span>
+		<ul role="submenu" class="sub-list" aria-hidden="true" style="display: none;">
+			<li role="submenuitem" class="menu-item" tabindex="-1">
+				<a href="ccc1"  tabindex="-1"> ccc1
+				</a>
+			</li>
+			<li role="submenuitem" class="menu-item" tabindex="-1">
+				<a href="ccc2" tabindex="-1"> ccc2
+			</li>
+		</ul>
+	</li>
+
+</ul>
+<script>
+	var $nav = $('#nav');
+	// var $rootItems = $nav.children('li');
+	var $items = $nav.find('.menu-item');
+	var $parents = $nav.find('.menu-parent');
+	var $allItems = $parents.add($items);
+	var $focusedItem = null;
+	// var vmenu = false; //if the menu is vertical
+	var bChildOpen = false; //if the child menu is open
+	//bind handlers
+	$parents.mouseenter(function(e){
+		handlers._handleMouseEnter($(this),e);
+	});
+	$parents.mouseleave(function(e){
+		handlers._handleMouseLeave($(this),e);
+	});	
+	$allItems.keydown(function(e) {
+		return handlers._handleKeyDown($(this), e);
+	});
+	var handlers = {
+		__openChildmenu: function($item) {
+			if ($item.attr('aria-haspopup') === 'true') {
+				$item.children('ul').show().attr('aria-hidden', 'false');
+				bChildOpen = true;
+			}
+		},
+		__closeChildmenu: function($item) {
+			if ($item.attr('aria-haspopup') === 'true') {
+				$item.children('ul').hide().attr('aria-hidden','true');
+				bChildOpen = false;
+			}
+		},
+		_handleMouseEnter: function($item, e){
+			this.__openChildmenu($item);
+		},
+		_handleMouseLeave: function($item, e) {
+			this.__closeChildmenu($item);
+		},
+		_handleKeyDown: function($item, e) {
+			var keys = {
+				tab:    9,
+				enter:  13,
+				esc:    27,
+				space:  32,
+				left:   37,
+				up:     38,
+				right:  39,
+				down:   40
+			};
+			var $itemUL = $item.parent();
+			var menuNum = $itemUL.children('li').length;
+			var menuIndex = $itemUL.children('li').index($item);
+			if (e.altKey || e.ctrlKey) {
+				return true;
+			}
+			switch(e.keyCode) {
+				case keys.tab: {
+					$nav.find('ul').hide().attr('aria-hidden', 'true');
+					$focusedItem = null;
+					bChildOpen = false;
+					break;
+				}
+				case keys.esc: {
+					if($itemUL.is('.root-level')) {
+						$item.children('ul').hide().attr('aria-hidden', 'true');
+					}
+					else {
+						$focusedItem = $itemUL.parent();
+						bChildOpen = false;
+						$focusedItem.focus();
+						$itemUL.hide().attr('aria-hidden', 'true');
+					}
+					e.stopPropagation();
+					break;
+				}
+				case keys.enter:
+				case keys.space: {
+					//if has submenu, open menu and move focus to first item
+					if ($item.is('.menu-parent')) {
+						this.__openChildmenu($item);
+						$item.children('ul').children('li').first().focus();
+					}
+					else {
+						window.location = $item.find('a').attr('href'); 
+					}
+					e.stopPropagation();
+					break;
+				}
+				case keys.left: {
+					//if root level, move to previous sibling
+					if ($itemUL.is('.root-level')){
+						if (menuIndex > 0) {
+							$item.prev().focus();
+						}
+					}
+					e.stopPropagation();
+					break;
+				}
+				case keys.right: {
+					//if root level, move to next sibling
+					if (!$itemUL.is('sub-list')){
+						if (menuIndex < menuNum-1) {
+							$item.next().focus();
+						}
+					}
+					e.stopPropagation();
+					break;
+				}
+				case keys.up: {
+					//if not root level, move to previous sibling
+					if ($itemUL.is('.sub-list')){
+						if (menuIndex > 0) {
+							$item.prev().focus();
+						}							}
+						e.stopPropagation();
+						break;
+					}
+					case keys.down: {
+					//if in sub menu, move to next item of sub menu
+					if($itemUL.is('.sub-list')) {
+						// this.__openChildmenu($item);
+						if (menuIndex < menuNum -1 ) {
+							$item.next().focus();
+						}							}
+						e.stopPropagation();
+						break;
+					}						
+				}
+			}
+		};
+	</script>
